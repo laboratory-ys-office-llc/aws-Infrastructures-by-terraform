@@ -8,6 +8,12 @@
 $ git clone https://github.com/laboratory-ys-office-llc/aws-infrastructures-by-terraform.git
 ```
 
+APP_ROOT/http-server へ cd
+
+```shell
+$ cd aws-infrastructures-by-terraform/http-server/
+```
+
 Terraform を初期化する
 
 ```shell
