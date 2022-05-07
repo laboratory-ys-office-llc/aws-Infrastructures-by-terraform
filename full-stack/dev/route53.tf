@@ -3,11 +3,11 @@
 ######################################################################
 
 # 登録済みドメインをTerraformで扱えるようdata化
-data "aws_route53_zone" "hoge_net" {
+data "aws_route53_zone" "app_sandbox_be" {
 
   # 利用するドメイン名を設定
   # ※ここの値はお持ちのドメイン名に変更してください。
-  name = "hoge.net"
+  name = "app-sandbox.be"
 }
 
 ######################################################################
@@ -19,23 +19,20 @@ data "aws_route53_zone" "hoge_net" {
 resource "aws_route53_record" "web" {
 
   # レコードを記述するホストゾーンのID
-  zone_id = data.aws_route53_zone.hoge_net.zone_id
+  zone_id = data.aws_route53_zone.app_sandbox_be.zone_id
 
   # レコード名を設定
   # data化したドメインのZone Apexをレコード登録
-  name    = data.aws_route53_zone.hoge_net.name
+  name    = data.aws_route53_zone.app_sandbox_be.name
 
   # レコードの種類をAに設定
   type    = "A"
-
 /*
   # TTLを300に設定
   ttl     = "300"
-
   # Aレコードに登録する値を設定
   # WebサーバーのパブリックIPを設定
   records = [aws_instance.web.public_ip]
-}
 */
 
   # エイリアスレコードを登録
@@ -155,25 +152,19 @@ resource "aws_route53_record" "aurora_clstr_ro_in" {
 # ACM用DNS検証設定
 ######################################################################
 
-# DNS検証レコードを構築
 resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for domain_validation_option in aws_acm_certificate.cert.domain_validation_options : domain_validation_option.domain_name => {
+      name   = domain_validation_option.resource_record_name
+      record = domain_validation_option.resource_record_value
+      type   = domain_validation_option.resource_record_type
+    }
+  }
 
-  # レコード名を設定
-  # ACMの持つ値を設定
-  name    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
-
-  # レコードの種類を設定
-  # ACMの持つ値を設定
-  type    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
-
-  # Route 53のZone IDを設定
-  zone_id = data.aws_route53_zone.hoge_net.zone_id
-
-  # レコードに登録する値を設定
-  # ACMの持つ値を設定
-  records = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
-
-  # 本ACMはALBで利用予定
-  # ALB用の設定は60
-  ttl     = 60
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.app_sandbox_be.zone_id
 }
