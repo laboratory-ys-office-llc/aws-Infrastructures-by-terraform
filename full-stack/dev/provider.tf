@@ -9,10 +9,9 @@ terraform {
   required_providers {
 
     # AWS Providerバージョンを設定
-    aws      = "2.70.0"
+    aws      = "4.12.1"
 
     # Template Providerバージョンを設定
-    template = "2.1.2"
+    template = "2.2.0"
   }
 }
-
